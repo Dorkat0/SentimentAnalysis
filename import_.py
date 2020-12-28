@@ -7,3 +7,6 @@ def importCSV(relativPath):
 
     return imp
 
+def importFullData():
+    return importCSV("data/fullData.csv")
+
