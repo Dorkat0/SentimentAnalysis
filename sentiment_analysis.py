@@ -33,6 +33,7 @@ iteration = 0
 for e, row in statement.iterrows():
     # statement text for analysing
     text = row['article_text']
+    #text = "I love you but hate the current political climate."
 
     # run SentiStrengh
     result = se.getSentiment(text, score='dual')
