@@ -1,12 +1,11 @@
 import statistics
+import datetime
 
 import matplotlib.pyplot as plt
 from scipy.stats.stats import pearsonr
 from scipy.stats import spearmanr
-
 import data_preparation
 import import_ as imp
-import pandas as pd
 
 
 def overall_information(data):
@@ -15,6 +14,7 @@ def overall_information(data):
     plt.ylabel("positive neutral and negative report")
     plt.xticks([])
     plt.figtext(.8, .8, "5 = positive\n0 = neutral\n-5 = negative")
+    plt.ylim([-5, +5])
     plt.show()
     plt.boxplot(data['comments_agreement'] * 100)
     plt.title("comment agreement")
@@ -23,12 +23,19 @@ def overall_information(data):
     plt.show()
     print("plotted")
 
+
 def single_values(data):
     com_med_agree = statistics.median(data['comments_agreement'] * 100)
     print("Median of the comment agreement: {:.2f}".format(com_med_agree))
 
     SD_mean = statistics.mean(data['SD'])
     print("Median of the comment agreement: {:.2f}".format(SD_mean))
+
+    average_discussion_days = data['duration_of_comments'].sum() / data['duration_of_comments'].count()
+    print("The average discussion time was {:.0f} days".format(average_discussion_days))
+
+    average_received_comments = statistics.mean(data['number_of_comments'])
+    print("In average a statement receives {:.0f} comments".format(average_received_comments))
 
 
 def correlation_statement_and_comment(data):
@@ -48,59 +55,60 @@ def correlation_statement_and_comment(data):
 
 
 def plot_correlation(data):
-    data1 = data[['statement_opinion_percent', 'comments_agreement']].sort_values(by='statement_opinion_percent')
-    # data2.plot(x='comments_agreement', y='statement_opinion_percent')
-    data1.plot(x='statement_opinion_percent', y='comments_agreement', kind='scatter')
+    data1 = data[['overall_sentiment', 'comments_agreement']].sort_values(by='overall_sentiment')
+    data1.plot(x='overall_sentiment', y='comments_agreement', kind='scatter')
+    plt.xlabel("statement sentiment")
+    plt.ylabel("agreement by comments")
     plt.show()
     print("plotted")
 
 
 def plot_SD_and_comments_agreement(data):
-    plt.plot(data['SD'])
+    data.plot(x='published_date', y='SD')
+    plt.xlim([datetime.datetime(2013, 1, 1), datetime.datetime(2016, 12, 31)])
     plt.show()
+
 
 def plot_number_of_comments(data):
     data.sort_values(by='published_date', ascending=False)
     data.plot(x='published_date', y='number_of_comments')
+    plt.xlim([datetime.datetime(2013, 1, 1), datetime.datetime(2016, 12, 31)])
+    plt.xlabel("publish date")
+    plt.ylabel("number of comments")
     plt.show()
 
 
-def plot_time_in_between(data):  # TODO not working jet
+def plot_time_in_between(data):
+    data.plot(y='duration_of_comments', x='published_date')
+    plt.xlim([datetime.datetime(2013, 1, 1), datetime.datetime(2016, 12, 31)])
+    plt.ylim([0, 700])
+    plt.xlabel("date of publications")
+    plt.ylabel("days of discussion")
+    plt.show()
 
-    data['time_in_between'] = None
-    for e, row in data.iterrows():
-        start = row['comments']['datetime'].min()
-        end = row['comments']['datetime'].max()
-        data = end - start
-        row['time_in_between'] = data
+
+def manual(data):
+    full_data = data_preparation.date_import_for_manual_evaluation()
+
+    # max_val = data.at[data['number_of_comments'].argmax(), 'article_id']
+    # print("wanted article id: {:.0f}".format(max_val))
+
+    max_val = data.at[data['duration_of_comments'].argmax(), 'article_id']
+    print("wanted article id: {:.0f}".format(max_val))
+    statement = full_data.loc[full_data['article_id'] == max_val]
+    print(statement)
 
 
 if __name__ == '__main__':
-    # Options:
-    # 0 ... csv import
-    # 1 ... data with time
+    data = imp.import_prepared_data()
 
-    option = 0
-    statement_with_no_comment = False
+    data.sort_values(by='published_date')
 
-    if option == 0:
-        data = imp.import_prepared_data()
-        empty_statements = []
-    elif option == 1:
-        data, empty_statements = data_preparation.get_prepared_data(full_comments=True)
-    else:
-        raise Exception('not a valid option')
-
-    if statement_with_no_comment:
-        if option == 0:
-            print("not possible to drop statement with no comment, by csv import")
-        data.drop(empty_statements, inplace=True)
-
-    #data.sort_values(by='published_date')
+    #single_values(data)
     #overall_information(data)
+    #plot_SD_and_comments_agreement(data)
     #correlation_statement_and_comment(data)
     #plot_correlation(data)
-    #plot_SD_and_comments_agreement(data)
     #plot_number_of_comments(data)
-    single_values(data)
-    # plot_time_in_between(data)
+    #plot_time_in_between(data)
+    #manual(data)
